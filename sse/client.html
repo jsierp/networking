@@ -1,0 +1,21 @@
+<html>
+<head>
+<script>
+    const evtSource = new EventSource("http://localhost:5000/events");
+
+    evtSource.onmessage = (event) => {
+        console.log(event);
+        const newElement = document.createElement("li");
+        const eventList = document.getElementById("list");
+
+        newElement.textContent = `message: ${event.data}`;
+        eventList.appendChild(newElement);
+    };
+
+</script>
+</head>
+<body>
+    Hello Chat!
+    <ul id="list"></ul>
+</body>
+</html>

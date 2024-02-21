@@ -15,8 +15,10 @@ def listen():
         while True:
             msg = messages.get()
             yield msg
+    response = Response(stream(), mimetype="text/event-stream")
+    response.headers.add('Access-Control-Allow-Origin', '*')
 
-    return Response(stream(), mimetype="text/event-stream")
+    return response 
 
 def broadcast(msg):
     for q in listeners:
@@ -28,5 +30,5 @@ if __name__ == "__main__":
 
     print(PROMPT, end=" ")
     while msg := input():
-        broadcast(f"event: foo\ndata:{msg}\n\n")
+        broadcast(f"event: message\ndata:{msg}\n\n")
         print(">", end=" ")
