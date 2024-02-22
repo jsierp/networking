@@ -2,7 +2,7 @@ from flask import Flask, Response
 import queue
 from threading import Thread
 
-app = Flask(__name__, )
+app = Flask(__name__, static_url_path="", static_folder=".")
 
 PROMPT = "Waiting for input\n>"
 

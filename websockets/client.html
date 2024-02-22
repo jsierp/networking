@@ -1,17 +1,20 @@
 <html>
 <head>
 <script>
-    const host = "http://localhost:5000"
-    const evtSource = new EventSource(`${host}/events`);
+    const host = "localhost:5000"
+    var url = `ws://${host}/websocket`
 
-    evtSource.onmessage = (event) => {
-        console.log(event);
+    const socket = new WebSocket(url);
+
+    socket.addEventListener("message", (event) => {
+        console.log("Message from server ", event.data);
+
         const newElement = document.createElement("li");
         const eventList = document.getElementById("list");
 
         newElement.textContent = `message: ${event.data}`;
         eventList.appendChild(newElement);
-    };
+    });
 
 </script>
 </head>
