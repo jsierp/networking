@@ -1,10 +1,8 @@
-from flask import Flask, Response, request
-import queue
 from threading import Thread
 import hashlib
+import http.server
+import socketserver
 import base64
-
-app = Flask(__name__, static_url_path="", static_folder=".")
 
 PROMPT = "Waiting for input\n>"
 
@@ -31,19 +29,6 @@ def get_frame(msg):
     ) + msg
     return frame
 
-@app.route("/websocket", websocket=True)
-def websocket():
-    listeners.append(request.environ['werkzeug.socket'])
-
-    response = Response(status=101, headers={
-        'Upgrade': 'websocket',
-        'Connection': 'upgrade',
-        'Sec-WebSocket-Accept': get_accept_header(
-            request.headers['Sec-Websocket-Key']
-        ),
-    })
-    return response
-
 def broadcast(msg):
     frame = get_frame(msg)
     for socket in listeners:
@@ -52,11 +37,36 @@ def broadcast(msg):
         except OSError as e:
             print(str(e))
 
-if __name__ == "__main__":
-    t = Thread(target=lambda: app.run(host="0.0.0.0"))
-    t.start()
+class Handler(http.server.SimpleHTTPRequestHandler):
 
+    def do_GET(self):
+        if self.path != '/websocket':
+            return super().do_GET()
+
+        listeners.append(self.request)
+
+        self.send_response(101)
+        self.send_header("Upgrade", "websocket")
+        self.send_header("Connection", "upgrade")
+        self.send_header("Sec-WebSocket-Accept", get_accept_header(
+            self.headers['Sec-Websocket-Key']
+        ))
+        self.close_connection = False
+        self.end_headers()
+
+
+def prompt_forever():
     print(PROMPT, end=" ")
     while msg := input():
         broadcast(msg)
         print(">", end=" ")
+
+class Server(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    allow_reuse_address = True
+
+if __name__ == "__main__":
+    t = Thread(target=prompt_forever)
+    t.start()
+    with Server(("0.0.0.0", 5000), Handler) as httpd:
+        print("serving at port", 5000)
+        httpd.serve_forever()
